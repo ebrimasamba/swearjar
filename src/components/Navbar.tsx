@@ -3,18 +3,17 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Flame, Menu, X, Coins, LayoutDashboard, Zap, History, Users, Settings, Database, Cloud, Calendar } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Flame, Menu, X, LayoutDashboard, Zap, History, Users, Settings, Cloud, Calendar } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { isSupabaseConfigured } from '@/lib/db';
 
 export function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-  const [isCloud, setIsCloud] = React.useState(false);
+  const [isConnected, setIsConnected] = React.useState(false);
 
   React.useEffect(() => {
-    setIsCloud(isSupabaseConfigured());
+    setIsConnected(isSupabaseConfigured());
   }, []);
 
   const navigation = [
@@ -47,7 +46,6 @@ export function Navbar() {
               </span>
             </Link>
 
-            {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-1">
               {navigation.map((item) => {
                 const active = isActive(item.href);
@@ -75,31 +73,20 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Database Connection Status Badge */}
             <div
               className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
-                isCloud
+                isConnected
                   ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400'
-                  : 'bg-amber-500/10 text-amber-500 border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400'
+                  : 'bg-rose-500/10 text-rose-500 border-rose-500/20 dark:bg-rose-500/20 dark:text-rose-400'
               }`}
-              title={isCloud ? 'Connected to Supabase Database' : 'Using Local Storage Web Database'}
+              title={isConnected ? 'Connected to Supabase Database' : 'Supabase not configured'}
             >
-              {isCloud ? (
-                <>
-                  <Cloud className="h-3 w-3" />
-                  <span>Cloud DB</span>
-                </>
-              ) : (
-                <>
-                  <Database className="h-3 w-3" />
-                  <span>Demo DB</span>
-                </>
-              )}
+              <Cloud className="h-3 w-3" />
+              <span>{isConnected ? 'Supabase' : 'Not Connected'}</span>
             </div>
 
             <ThemeToggle />
 
-            {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/40 bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground md:hidden transition-colors"
@@ -111,7 +98,6 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-border bg-background px-4 py-4 animate-in fade-in slide-in-from-top-4 duration-200">
           <nav className="flex flex-col space-y-2">
@@ -142,13 +128,13 @@ export function Navbar() {
               <span className="text-sm text-muted-foreground font-medium">Database Status:</span>
               <div
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${
-                  isCloud
+                  isConnected
                     ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                    : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                    : 'bg-rose-500/10 text-rose-500 border-rose-500/20'
                 }`}
               >
-                {isCloud ? <Cloud className="h-3 w-3" /> : <Database className="h-3 w-3" />}
-                <span>{isCloud ? 'Cloud (Supabase)' : 'Local (Demo Mode)'}</span>
+                <Cloud className="h-3 w-3" />
+                <span>{isConnected ? 'Supabase' : 'Not Connected'}</span>
               </div>
             </div>
           </nav>
