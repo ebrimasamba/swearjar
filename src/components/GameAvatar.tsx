@@ -138,9 +138,22 @@ export function GameAvatar({
 /** Back-compat alias — list rows used to render a DiceBear sprite here. */
 export const AvatarSprite = GameAvatar;
 
+/** One period repeats every 50 units, so the 200-wide path tiles seamlessly. */
+const WAVE_PATH =
+  'M0,12 Q12.5,4 25,12 T50,12 T75,12 T100,12 T125,12 T150,12 T175,12 T200,12 V30 H0 Z';
+
+/** Deterministic pulp — a fixed set, so nothing reshuffles between renders. */
+const PULP = [
+  { left: 22, size: 5, delay: '0s', dur: '4.5s' },
+  { left: 48, size: 3.5, delay: '1.4s', dur: '5.6s' },
+  { left: 68, size: 4.5, delay: '2.6s', dur: '4.1s' },
+  { left: 36, size: 3, delay: '3.4s', dur: '6.2s' },
+  { left: 78, size: 3.5, delay: '0.8s', dur: '5.1s' },
+];
+
 /**
- * The jar. Fill is data, so it can't be a flat image: coins stack to a height
- * proportional to the fund, behind the glass.
+ * The jar. Fill is data — the juice level is proportional to the fund — so this
+ * can't just be a flat image.
  */
 export function GameJar({
   amount,
@@ -152,17 +165,8 @@ export function GameJar({
   className?: string;
 }) {
   const pct = goal > 0 ? Math.min(1, Math.max(0, amount / goal)) : 0;
-
-  // Deterministic scatter, so the pile doesn't reshuffle on every render.
-  const coins = React.useMemo(() => {
-    const n = Math.round(pct * 14);
-    return Array.from({ length: n }, (_, i) => ({
-      left: 12 + ((i * 37) % 62),
-      bottom: Math.floor(i / 3) * 13 + ((i * 17) % 7),
-      rot: ((i * 53) % 60) - 30,
-      z: i,
-    }));
-  }, [pct]);
+  // Keep a sliver visible once anything is in the jar, or the waves clip away.
+  const fillH = pct > 0 ? Math.max(pct * 100, 9) : 0;
 
   return (
     <div className={cn('relative select-none', className)}>
@@ -180,33 +184,59 @@ export function GameJar({
           className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_16px_30px_rgba(42,6,17,0.6)] [filter:saturate(0.45)_brightness(1.08)]"
         />
 
-        {/* Coins sit in front of the glass, clipped to its interior and rising
-            with the fund — behind an opaque render they'd be invisible. */}
+        {/* Juice, clipped to the glass interior. It renders in front of the
+            jar because the source render is opaque — behind it, nothing shows. */}
         <div className="absolute inset-x-[26%] bottom-[15%] top-[30%] overflow-hidden rounded-b-[22%]">
-          <div
-            className="absolute inset-x-0 bottom-0 transition-[height] duration-700 ease-out"
-            style={{ height: `${Math.max(pct * 100, pct > 0 ? 14 : 0)}%` }}
-          >
-            {coins.map((c) => (
-              <Image
-                key={c.z}
-                src="/3d/coin.png"
-                alt=""
+          {pct > 0 && (
+            <div
+              className="absolute inset-x-0 bottom-0 transition-[height] duration-700 ease-out"
+              style={{ height: `${fillH}%` }}
+            >
+              {/* Body */}
+              <div className="absolute inset-0 bg-gradient-to-b from-[#ff9f1c] via-[#f97c08] to-[#e2560a]" />
+
+              {/* Pulp */}
+              {PULP.map((p, i) => (
+                <span
+                  key={i}
+                  aria-hidden
+                  className="animate-bubble absolute bottom-1 rounded-full bg-[#ffd08a]"
+                  style={{
+                    left: `${p.left}%`,
+                    width: `${p.size}%`,
+                    aspectRatio: '1',
+                    animationDelay: p.delay,
+                    animationDuration: p.dur,
+                  }}
+                />
+              ))}
+
+              {/* Surface: two waves at different speeds so it reads as liquid,
+                  not one flat shape sliding sideways. */}
+              <svg
                 aria-hidden
-                width={44}
-                height={44}
-                unoptimized
-                className="absolute w-[38%] drop-shadow-[0_2px_4px_rgba(42,6,17,0.5)]"
-                style={{ left: `${c.left}%`, bottom: `${c.bottom}%`, transform: `rotate(${c.rot}deg)` }}
-              />
-            ))}
-          </div>
+                viewBox="0 0 200 30"
+                preserveAspectRatio="none"
+                className="animate-wave-slow absolute -top-[7px] left-0 h-[14px] w-[200%] fill-[#f97c08]"
+              >
+                <path d={WAVE_PATH} />
+              </svg>
+              <svg
+                aria-hidden
+                viewBox="0 0 200 30"
+                preserveAspectRatio="none"
+                className="animate-wave absolute -top-[9px] left-0 h-[14px] w-[200%] fill-[#ffb703]"
+              >
+                <path d={WAVE_PATH} />
+              </svg>
+            </div>
+          )}
         </div>
 
-        {/* Faint specular pass so the coins still read as behind glass */}
+        {/* Specular pass so the juice still reads as behind glass */}
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-[26%] bottom-[15%] top-[30%] rounded-b-[22%] bg-gradient-to-br from-white/20 via-transparent to-transparent"
+          className="pointer-events-none absolute inset-x-[26%] bottom-[15%] top-[30%] rounded-b-[22%] bg-gradient-to-br from-white/25 via-transparent to-transparent"
         />
       </div>
     </div>

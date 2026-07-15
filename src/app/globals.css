@@ -303,6 +303,26 @@ body::before {
 }
 .animate-float { animation: float-y 4s ease-in-out infinite; }
 
+/*
+  Liquid surface. The wave svg is 200% wide and its shape repeats every 50%,
+  so sliding it exactly -50% loops with no visible seam. Two layers at
+  different speeds read as depth rather than one flat sliding shape.
+*/
+@keyframes wave-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-wave { animation: wave-x 5s linear infinite; }
+.animate-wave-slow { animation: wave-x 8s linear infinite reverse; }
+
+/* Pulp rising through the juice */
+@keyframes bubble-rise {
+  0% { transform: translateY(0) scale(0.7); opacity: 0; }
+  15% { opacity: 0.75; }
+  100% { transform: translateY(-220%) scale(1); opacity: 0; }
+}
+.animate-bubble { animation: bubble-rise 4.5s ease-in infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
