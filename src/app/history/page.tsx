@@ -11,7 +11,7 @@ import { ArrowLeft, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AvatarSprite } from '@/components/GameAvatar';
+import { GameAvatar, assignCharacters } from '@/components/GameAvatar';
 import { toast } from 'sonner';
 
 export default function History() {
@@ -44,6 +44,9 @@ export default function History() {
     }
     loadData();
   }, []);
+
+  // Built from the full roster so a person keeps the same character app-wide.
+  const characters = React.useMemo(() => assignCharacters(employees.map((e) => e.name)), [employees]);
 
   const handleDeleteSwear = async (id: string, empName: string) => {
     if (!isAdmin) return;
@@ -150,7 +153,7 @@ export default function History() {
                 transition={{ delay: Math.min(i * 0.02, 0.3) }}
                 className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-foreground/[0.04]"
               >
-                <AvatarSprite seed={item.employeeName} size={36} />
+                <GameAvatar seed={item.employeeName} character={characters[item.employeeName]} size={36} />
 
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{item.employeeName}</p>

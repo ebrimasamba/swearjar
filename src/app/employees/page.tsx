@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AvatarSprite } from '@/components/GameAvatar';
+import { GameAvatar, assignCharacters } from '@/components/GameAvatar';
 import { toast } from 'sonner';
 
 export default function Employees() {
@@ -47,6 +47,9 @@ export default function Employees() {
     }
     load();
   }, []);
+
+  // Built from the full roster so a person keeps the same character app-wide.
+  const characters = React.useMemo(() => assignCharacters(employees.map((e) => e.name)), [employees]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,7 +197,7 @@ export default function Employees() {
                   transition={{ delay: Math.min(i * 0.03, 0.3) }}
                   className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-foreground/[0.04]"
                 >
-                  <AvatarSprite seed={emp.name} size={40} />
+                  <GameAvatar seed={emp.name} character={characters[emp.name]} size={40} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold">{emp.name}</p>
                     <p className="font-mono text-[10px] tabular text-muted-foreground">

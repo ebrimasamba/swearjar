@@ -12,7 +12,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AvatarSprite } from '@/components/GameAvatar';
+import { GameAvatar, assignCharacters } from '@/components/GameAvatar';
 import { XpBar, LevelBadge } from '@/components/game/GameBits';
 import { toast } from 'sonner';
 
@@ -53,6 +53,9 @@ export default function QuickAdd() {
     }
     loadData();
   }, []);
+
+  // Built from the full roster so a person keeps the same character app-wide.
+  const characters = React.useMemo(() => assignCharacters(employees.map((e) => e.name)), [employees]);
 
   const counts = React.useMemo(() => {
     const month: Record<string, number> = {};
@@ -242,7 +245,7 @@ export default function QuickAdd() {
               )}
 
               <div className="relative flex items-start justify-between">
-                <AvatarSprite seed={emp.name} size={52} className={cn(isHit && 'animate-wiggle')} />
+                <GameAvatar seed={emp.name} character={characters[emp.name]} size={52} className={cn(isHit && 'animate-wiggle')} />
                 <LevelBadge level={lvl.level} />
               </div>
 

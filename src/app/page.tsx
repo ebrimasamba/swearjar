@@ -17,7 +17,7 @@ import {
 } from 'react-icons/gi';
 import { ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar3D, Jar3D, AvatarSprite } from '@/components/GameAvatar';
+import { GameAvatar, GameJar, assignCharacters } from '@/components/GameAvatar';
 import { Counter, TierChip, LevelBadge, XpBar, AchievementGrid, SectionTitle } from '@/components/game/GameBits';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -81,6 +81,9 @@ export default function Dashboard() {
   }, [currentMonthSwears, employees, pricePerSwear]);
 
   const lifetimeTotal = swears.length * pricePerSwear;
+
+  // Built from the full roster so a person keeps the same character everywhere.
+  const characters = React.useMemo(() => assignCharacters(employees.map((e) => e.name)), [employees]);
 
   /** Everything the board needs, computed once. */
   const board = React.useMemo(() => {
@@ -255,13 +258,14 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* The 3D character, bursting past the card edge */}
-            <div className="relative h-56 w-full shrink-0 sm:h-64 sm:w-64">
-              {mostWanted ? (
-                <Avatar3D seed={mostWanted.name} rage={1} className="h-full w-full" />
-              ) : (
-                <Avatar3D seed="empty-arena" rage={0} className="h-full w-full" />
-              )}
+            {/* The character, floating out past the card's padding */}
+            <div className="relative flex h-44 w-full shrink-0 items-center justify-center sm:h-56 sm:w-56">
+              <GameAvatar
+                seed={mostWanted?.name ?? 'empty-arena'}
+                hero={Boolean(mostWanted)}
+                size={200}
+                className="animate-float"
+              />
             </div>
           </div>
 
@@ -281,7 +285,7 @@ export default function Dashboard() {
           <p className="relative font-mono text-[10px] font-semibold uppercase tracking-[0.3em] text-gold">
             The Jar
           </p>
-          <Jar3D fillPct={lifetimeTotal / nextMilestone(lifetimeTotal)} className="relative h-52 w-full" />
+          <GameJar amount={lifetimeTotal} goal={nextMilestone(lifetimeTotal)} className="relative my-2 w-full" />
           <p className="relative font-mono text-3xl font-bold tabular text-gold">
             <Counter value={lifetimeTotal} format={(n) => formatCurrency(n)} />
           </p>
@@ -354,7 +358,7 @@ export default function Dashboard() {
                     {idx + 1}
                   </span>
 
-                  <AvatarSprite seed={p.name} size={40} />
+                  <GameAvatar seed={p.name} character={characters[p.name]} size={40} />
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">

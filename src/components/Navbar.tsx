@@ -107,7 +107,13 @@ export function Navbar() {
 
       {/* Top bar */}
       <header className="sticky top-0 z-40 w-full">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        {/* Veil: blurs + tints whatever scrolls beneath, fading out downward
+            so the bar stays legible without a hard chrome edge. */}
+        <div
+          aria-hidden
+          className="header-veil pointer-events-none absolute inset-x-0 top-0 h-[calc(100%+1.75rem)] bg-gradient-to-b from-background/90 via-background/55 to-transparent"
+        />
+        <div className="relative mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2.5 lg:hidden">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-hot text-hot-foreground">
               <GiJerrycan className="h-5 w-5" />

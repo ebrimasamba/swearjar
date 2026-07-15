@@ -9,7 +9,7 @@ import { getLevel, getTier } from '@/lib/game';
 import { GiCalendar, GiThunderStruck, GiTwoCoins, GiPerson, GiScrollQuill } from 'react-icons/gi';
 import { ArrowLeft } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AvatarSprite } from '@/components/GameAvatar';
+import { GameAvatar, assignCharacters } from '@/components/GameAvatar';
 import { Counter, XpBar, LevelBadge, SectionTitle } from '@/components/game/GameBits';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -50,6 +50,9 @@ export default function MonthsPage() {
     }
     loadData();
   }, []);
+
+  // Built from the full roster so a person keeps the same character app-wide.
+  const characters = React.useMemo(() => assignCharacters(employees.map((e) => e.name)), [employees]);
 
   const availableMonths = React.useMemo(() => {
     const keys = new Set<string>([getMonthYearKey(new Date())]);
@@ -206,7 +209,7 @@ export default function MonthsPage() {
                       >
                         {idx + 1}
                       </span>
-                      <AvatarSprite seed={p.name} size={40} />
+                      <GameAvatar seed={p.name} character={characters[p.name]} size={40} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <p className="truncate font-semibold">{p.name}</p>
