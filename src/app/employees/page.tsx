@@ -4,16 +4,16 @@ import * as React from 'react';
 import Link from 'next/link';
 import { db, type Employee } from '@/lib/db';
 import { getInitials, cn } from '@/lib/utils';
+import { useAuth } from '@/lib/auth-context';
 import {
   ArrowLeft,
   UserPlus,
   Edit2,
   Trash2,
   AlertTriangle,
-  Users,
   Calendar,
   HelpCircle,
-  Plus,
+  Lock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +31,7 @@ import {
 import { toast } from 'sonner';
 
 export default function Employees() {
+  const { isAdmin } = useAuth();
   const [employees, setEmployees] = React.useState<Employee[]>([]);
   const [loading, setLoading] = React.useState(true);
 
@@ -62,6 +63,7 @@ export default function Employees() {
 
   const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) return;
     const name = newEmployeeName.trim();
     if (!name) {
       toast.warning('Name cannot be empty.');
@@ -72,10 +74,10 @@ export default function Employees() {
       const newEmp = await db.addEmployee(name);
       setEmployees((prev) => [...prev, newEmp].sort((a, b) => a.name.localeCompare(b.name)));
       setNewEmployeeName('');
-      toast.success(`Successfully added ${name}!`);
+      toast.success(`${name} added to the roster.`);
     } catch (error) {
       console.error('Failed to add employee:', error);
-      toast.error('Error adding employee.');
+      toast.error('Could not add employee. Try again.');
     }
   };
 
@@ -86,7 +88,7 @@ export default function Employees() {
   };
 
   const handleSaveEdit = async () => {
-    if (!editingEmployee) return;
+    if (!isAdmin || !editingEmployee) return;
     const name = editedName.trim();
     if (!name) {
       toast.warning('Name cannot be empty.');
@@ -105,7 +107,7 @@ export default function Employees() {
       toast.success(`Name updated to ${name}.`);
     } catch (error) {
       console.error('Failed to update employee name:', error);
-      toast.error('Error updating employee.');
+      toast.error('Could not update employee. Try again.');
     }
   };
 
@@ -115,7 +117,7 @@ export default function Employees() {
   };
 
   const handleConfirmDelete = async () => {
-    if (!deletingEmployee) return;
+    if (!isAdmin || !deletingEmployee) return;
 
     try {
       await db.deleteEmployee(deletingEmployee.id);
@@ -123,11 +125,11 @@ export default function Employees() {
       setIsDeleteDialogOpen(false);
       setDeletingEmployee(null);
       toast.success(`Removed ${deletingEmployee.name} from the roster.`, {
-        description: 'All associated swear records have been deleted.',
+        description: 'Their swear records were deleted too.',
       });
     } catch (error) {
       console.error('Failed to delete employee:', error);
-      toast.error('Error removing employee.');
+      toast.error('Could not remove employee. Try again.');
     }
   };
 
@@ -135,12 +137,12 @@ export default function Employees() {
     return (
       <div className="space-y-8 animate-pulse">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 bg-muted rounded-lg" />
+          <div className="h-9 w-9 bg-muted rounded-md" />
           <div className="h-8 w-40 bg-muted rounded-md" />
         </div>
         <div className="grid gap-6 md:grid-cols-3">
-          <Card className="h-40 bg-muted border-border/40" />
-          <Card className="h-48 md:col-span-2 bg-muted border-border/40" />
+          <Card className="h-40 bg-muted border-border" />
+          <Card className="h-48 md:col-span-2 bg-muted border-border" />
         </div>
       </div>
     );
@@ -150,55 +152,67 @@ export default function Employees() {
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Page Title */}
       <div className="flex items-center gap-2">
-        <Link href="/" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border/40 bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground transition-all">
+        <Link href="/" className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground transition-all">
           <ArrowLeft className="h-5 w-5" />
           <span className="sr-only">Back</span>
         </Link>
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Manage Employees</h1>
-          <p className="text-xs text-muted-foreground sm:text-sm">Add, rename, or remove team members from the tracker.</p>
+          <h1 className="text-2xl font-heading font-semibold tracking-tight sm:text-3xl">Manage Employees</h1>
+          <p className="text-xs text-muted-foreground sm:text-sm">Add, rename, or remove people from the roster.</p>
         </div>
       </div>
 
       <div className="grid gap-8 md:grid-cols-3">
-        {/* Left Side: Add Form */}
-        <Card className="border-border/40 bg-card/45 backdrop-blur-xs h-fit">
+        {/* Left Side: Add Form (admin only) */}
+        <Card className="border-border bg-card shadow-ledger h-fit">
           <CardHeader>
-            <CardTitle className="text-lg font-bold">Add Employee</CardTitle>
-            <CardDescription>Enroll a new offender in the swear jar program</CardDescription>
+            <CardTitle className="font-heading text-lg">Add employee</CardTitle>
+            <CardDescription>Enroll someone in the tracker</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleAddEmployee} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="employee-name">Full Name</Label>
-                <Input
-                  id="employee-name"
-                  placeholder="e.g. Creed Bratton"
-                  value={newEmployeeName}
-                  onChange={(e) => setNewEmployeeName(e.target.value)}
-                  className="bg-background/80 border-border/60"
-                  maxLength={50}
-                  required
-                />
+            {isAdmin ? (
+              <form onSubmit={handleAddEmployee} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="employee-name">Full name</Label>
+                  <Input
+                    id="employee-name"
+                    placeholder="e.g. Creed Bratton"
+                    value={newEmployeeName}
+                    onChange={(e) => setNewEmployeeName(e.target.value)}
+                    className="bg-background border-border"
+                    maxLength={50}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-gold-foreground font-medium gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  Add employee
+                </Button>
+              </form>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                <Lock className="h-4 w-4 shrink-0" />
+                <span>
+                  <Link href="/login" className="font-medium text-foreground hover:underline">
+                    Sign in as admin
+                  </Link>{' '}
+                  to add employees.
+                </span>
               </div>
-              <Button type="submit" className="w-full bg-linear-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-medium gap-2">
-                <UserPlus className="h-4 w-4" />
-                Add Employee
-              </Button>
-            </form>
+            )}
           </CardContent>
         </Card>
 
         {/* Right Side: Roster Table */}
-        <Card className="md:col-span-2 border-border/40 bg-card/45 backdrop-blur-xs shadow-xs">
+        <Card className="md:col-span-2 border-border bg-card shadow-ledger">
           <CardHeader>
-            <CardTitle className="text-lg font-bold flex items-center justify-between">
+            <CardTitle className="font-heading text-lg flex items-center justify-between">
               <span>Roster</span>
-              <span className="text-xs font-semibold px-2 py-0.5 bg-secondary text-muted-foreground border rounded-full">
-                {employees.length} Active
+              <span className="text-xs font-mono tabular font-medium px-2 py-0.5 bg-secondary text-muted-foreground border border-border rounded-md">
+                {employees.length} active
               </span>
             </CardTitle>
-            <CardDescription>All employees registered in the system</CardDescription>
+            <CardDescription>Everyone currently tracked</CardDescription>
           </CardHeader>
           <CardContent className="px-0 sm:px-6">
             {employees.length === 0 ? (
@@ -214,7 +228,7 @@ export default function Employees() {
                     <TableRow className="hover:bg-transparent">
                       <TableHead>Employee</TableHead>
                       <TableHead className="hidden sm:table-cell">Added Date</TableHead>
-                      <TableHead className="w-24 text-right">Actions</TableHead>
+                      {isAdmin && <TableHead className="w-24 text-right">Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -224,7 +238,7 @@ export default function Employees() {
                           <div className="flex items-center gap-3">
                             <div
                               className={cn(
-                                'h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-xs',
+                                'h-8 w-8 rounded-md flex items-center justify-center text-white text-xs font-bold shadow-xs',
                                 emp.avatar_color || 'bg-gray-400'
                               )}
                             >
@@ -245,30 +259,32 @@ export default function Employees() {
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleOpenEditDialog(emp)}
-                              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                              title="Edit Name"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleOpenDeleteDialog(emp)}
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                              title="Delete Employee"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Delete</span>
-                            </Button>
-                          </div>
-                        </TableCell>
+                        {isAdmin && (
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenEditDialog(emp)}
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                                title="Edit Name"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                                <span className="sr-only">Edit</span>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenDeleteDialog(emp)}
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                title="Delete Employee"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Delete</span>
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -304,7 +320,7 @@ export default function Employees() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSaveEdit} className="bg-amber-500 hover:bg-amber-600 text-white font-medium">
+            <Button onClick={handleSaveEdit} className="bg-gold hover:bg-gold/90 text-gold-foreground font-medium">
               Save changes
             </Button>
           </DialogFooter>

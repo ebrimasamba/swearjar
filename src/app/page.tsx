@@ -8,24 +8,20 @@ import {
   formatCurrency,
   getInitials,
   isSameMonthAndYear,
+  getOffenderRank,
+  getStreakDays,
 } from '@/lib/utils';
 import {
-  Trophy,
   Flame,
-  Coins,
-  TrendingUp,
-  Activity,
   UserPlus,
-  Plus,
-  AlertCircle,
   HelpCircle,
-  TrendingDown,
   ChevronRight,
   Zap,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { SwearJar } from '@/components/SwearJar';
 import { toast } from 'sonner';
 import {
   BarChart,
@@ -38,7 +34,14 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+
+const MEDAL_STYLES = [
+  'bg-gold text-gold-foreground',
+  'bg-muted-foreground/25 text-foreground',
+  'bg-[#a8722c]/25 text-foreground',
+];
+
+const CHART_PALETTE = ['#a8722c', '#3f7a5e', '#a24a3a', '#4f6f8f', '#7c6a9b', '#8a8449', '#9b6b85', '#7a9481'];
 
 export default function Dashboard() {
   const [employees, setEmployees] = React.useState<Employee[]>([]);
@@ -84,9 +87,11 @@ export default function Dashboard() {
     return { totalSwears, totalMoney, averageSwears };
   }, [currentMonthSwears, employees, pricePerSwear]);
 
+  // Lifetime jar total — this is the number the physical jar represents.
+  const lifetimeTotal = React.useMemo(() => swears.length * pricePerSwear, [swears, pricePerSwear]);
+
   // Leaderboard data - current month
   const leaderboard = React.useMemo(() => {
-    // Count swears per employee this month
     const countMap: Record<string, number> = {};
     employees.forEach((emp) => {
       countMap[emp.id] = 0;
@@ -98,34 +103,26 @@ export default function Dashboard() {
       }
     });
 
-    // Map to list and sort
     const list = employees.map((emp) => ({
       ...emp,
       swearsCount: countMap[emp.id] || 0,
       amountOwed: (countMap[emp.id] || 0) * pricePerSwear,
+      streakDays: getStreakDays(swears, emp.id),
     }));
 
-    // Sort by count descending
     return list.sort((a, b) => b.swearsCount - a.swearsCount);
-  }, [employees, currentMonthSwears, pricePerSwear]);
-
-  const maxSwears = React.useMemo(() => {
-    if (leaderboard.length === 0) return 0;
-    return Math.max(...leaderboard.map((item) => item.swearsCount));
-  }, [leaderboard]);
+  }, [employees, currentMonthSwears, pricePerSwear, swears]);
 
   // Recent activity - last 5 swears overall (with employee details)
   const recentActivity = React.useMemo(() => {
-    return swears
-      .slice(0, 5)
-      .map((s) => {
-        const emp = employees.find((e) => e.id === s.employee_id);
-        return {
-          ...s,
-          employeeName: emp ? emp.name : 'Unknown Employee',
-          avatarColor: emp ? emp.avatar_color : 'bg-gray-400',
-        };
-      });
+    return swears.slice(0, 5).map((s) => {
+      const emp = employees.find((e) => e.id === s.employee_id);
+      return {
+        ...s,
+        employeeName: emp ? emp.name : 'Unknown Employee',
+        avatarColor: emp ? emp.avatar_color : 'bg-gray-400',
+      };
+    });
   }, [swears, employees]);
 
   // Chart data formatting
@@ -133,100 +130,44 @@ export default function Dashboard() {
     return leaderboard
       .filter((item) => item.swearsCount > 0)
       .map((item) => ({
-        name: item.name.split(' ')[0], // First name for compact display
+        name: item.name.split(' ')[0],
         fullName: item.name,
         swears: item.swearsCount,
         amount: item.amountOwed,
       }));
   }, [leaderboard]);
 
-  // Color mapping for Pie Chart
-  const pieColors = [
-    'hsl(var(--chart-1))',
-    'hsl(var(--chart-2))',
-    'hsl(var(--chart-3))',
-    'hsl(var(--chart-4))',
-    'hsl(var(--chart-5))',
-    '#f59e0b', // Amber
-    '#ec4899', // Pink
-    '#10b981', // Emerald
-    '#8b5cf6', // Violet
-    '#ef4444', // Red
-  ];
-
   if (loading) {
     return (
       <div className="space-y-8 animate-pulse">
-        {/* Header Skeleton */}
         <div className="flex flex-col gap-2">
           <div className="h-8 w-48 bg-muted rounded-md" />
           <div className="h-4 w-72 bg-muted rounded-md" />
         </div>
-
-        {/* Stats Grid Skeleton */}
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="border-border/40">
-              <CardContent className="pt-6">
-                <div className="h-4 w-24 bg-muted rounded mb-2" />
-                <div className="h-8 w-16 bg-muted rounded" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Main Grid Skeleton */}
-        <div className="grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="border-border/40">
-              <CardHeader>
-                <div className="h-6 w-32 bg-muted rounded" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-12 bg-muted rounded" />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="space-y-6">
-            <Card className="border-border/40">
-              <CardHeader>
-                <div className="h-6 w-28 bg-muted rounded" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-10 bg-muted rounded" />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Card className="h-72 bg-muted border-border lg:col-span-1" />
+          <Card className="h-72 bg-muted border-border lg:col-span-2" />
         </div>
       </div>
     );
   }
 
-  // If there are no employees, display the empty state.
   if (employees.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <div className="w-24 h-24 rounded-full bg-amber-500/10 flex items-center justify-center mb-6 text-amber-500 animate-bounce">
-          <Flame className="w-12 h-12" />
+        <div className="w-20 h-20 rounded-md bg-primary flex items-center justify-center mb-6 text-gold">
+          <Flame className="w-9 h-9" />
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl bg-linear-to-r from-amber-500 to-rose-500 bg-clip-text text-transparent mb-3">
-          No Employees Added Yet
+        <h1 className="text-2xl font-heading font-semibold tracking-tight sm:text-3xl mb-3">
+          No employees on the roster
         </h1>
         <p className="text-muted-foreground max-w-md mb-8">
-          SwearJar requires employees to track language! Get started by adding your colleagues to begin monitoring swears and building your office leaderboard.
+          The ledger needs names before it can track anything. Add your first colleague to start the jar.
         </p>
         <Link href="/employees">
-          <Button size="lg" className="bg-linear-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 shadow-lg hover:scale-105 transition-all text-white font-medium gap-2">
+          <Button size="lg" className="bg-gold hover:bg-gold/90 text-gold-foreground font-medium gap-2">
             <UserPlus className="w-5 h-5" />
-            Add First Employee
+            Add first employee
           </Button>
         </Link>
       </div>
@@ -235,106 +176,65 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Top Welcome Header */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl bg-linear-to-r from-foreground via-foreground/90 to-muted-foreground bg-clip-text text-transparent">
-            Office Swear Leaderboard
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1 sm:text-base">
-            Keeping conversations clean, one swear at a time. Stats for{' '}
-            <span className="font-semibold text-foreground">
-              {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-            </span>
-            .
+          <p className="text-xs font-mono tabular uppercase tracking-widest text-gold mb-1">
+            {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} ledger
           </p>
+          <h1 className="text-3xl font-heading font-semibold tracking-tight sm:text-4xl">
+            Office Swear Ledger
+          </h1>
         </div>
         <Link href="/quick-add">
           <Button
             size="lg"
-            className="bg-linear-to-tr from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 shadow-md hover:shadow-lg text-white font-semibold transition-all hover:scale-105 active:scale-95 gap-2"
+            className="bg-gold hover:bg-gold/90 text-gold-foreground font-medium transition-transform active:scale-95 gap-2"
           >
-            <Zap className="h-5 w-5 fill-white animate-pulse" />
-            Quick Add Swear
+            <Zap className="h-5 w-5" />
+            Quick add swear
           </Button>
         </Link>
       </div>
 
-      {/* Top Statistics Cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        {/* Total Swears */}
-        <Card className="border-border/40 bg-card/60 backdrop-blur-xs relative overflow-hidden group hover:shadow-md transition-all duration-300">
-          <div className="absolute right-3 top-3 opacity-10 group-hover:scale-110 group-hover:opacity-15 transition-transform duration-300">
-            <Flame className="h-20 w-20 text-rose-500" />
-          </div>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Flame className="h-4 w-4 text-rose-500 animate-pulse" />
-              <span>Total Swears (Month)</span>
-            </div>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-3xl font-extrabold tracking-tight">{stats.totalSwears}</span>
-              <span className="text-xs text-muted-foreground font-semibold">swears</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Registered in {new Date().toLocaleDateString('en-US', { month: 'short' })}
-            </p>
-          </CardContent>
+      {/* Hero: the jar + this month's ledger, asymmetric */}
+      <div className="grid gap-6 lg:grid-cols-5">
+        <Card className="lg:col-span-2 border-border bg-card shadow-ledger flex items-center justify-center py-8">
+          <SwearJar amount={lifetimeTotal} label="Office fund" />
         </Card>
 
-        {/* Total Money */}
-        <Card className="border-border/40 bg-card/60 backdrop-blur-xs relative overflow-hidden group hover:shadow-md transition-all duration-300">
-          <div className="absolute right-3 top-3 opacity-10 group-hover:scale-110 group-hover:opacity-15 transition-transform duration-300">
-            <Coins className="h-20 w-20 text-amber-500" />
-          </div>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Coins className="h-4 w-4 text-amber-500" />
-              <span>Money Owed</span>
+        <Card className="lg:col-span-3 border-border bg-card shadow-ledger">
+          <CardHeader>
+            <CardTitle className="font-heading text-lg">This month, so far</CardTitle>
+            <CardDescription>Live tally across the whole office</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+            <div>
+              <p className="text-4xl font-mono tabular font-semibold">{stats.totalSwears}</p>
+              <p className="text-xs text-muted-foreground mt-1">swears logged</p>
             </div>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-3xl font-extrabold tracking-tight text-amber-600 dark:text-amber-400">
+            <div>
+              <p className="text-4xl font-mono tabular font-semibold text-gold">
                 {formatCurrency(stats.totalMoney)}
-              </span>
-              <span className="text-xs text-muted-foreground font-semibold">at {formatCurrency(pricePerSwear)}/ea</span>
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">at {formatCurrency(pricePerSwear)} each</p>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Collected toward the office jar
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Average Swears */}
-        <Card className="border-border/40 bg-card/60 backdrop-blur-xs relative overflow-hidden group hover:shadow-md transition-all duration-300">
-          <div className="absolute right-3 top-3 opacity-10 group-hover:scale-110 group-hover:opacity-15 transition-transform duration-300">
-            <TrendingUp className="h-20 w-20 text-purple-500" />
-          </div>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Activity className="h-4 w-4 text-purple-500" />
-              <span>Average Swears</span>
+            <div>
+              <p className="text-4xl font-mono tabular font-semibold">{stats.averageSwears}</p>
+              <p className="text-xs text-muted-foreground mt-1">avg per employee</p>
             </div>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-3xl font-extrabold tracking-tight">{stats.averageSwears}</span>
-              <span className="text-xs text-muted-foreground font-semibold">per employee</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Across {employees.length} active team members
-            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Leaderboard Table and Activity Grid */}
-      <div className="grid gap-8 lg:grid-cols-3">
-        {/* Leaderboard Table (2/3 width) */}
-        <Card className="lg:col-span-2 border-border/40 bg-card/45 backdrop-blur-xs shadow-xs">
+      {/* Leaderboard + Recent Activity */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2 border-border bg-card shadow-ledger">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
-              <CardTitle className="text-xl font-bold">Top Offenders</CardTitle>
-              <CardDescription>Ranked by swears committed this month</CardDescription>
+              <CardTitle className="font-heading text-lg">Most cited</CardTitle>
+              <CardDescription>Ranked by swears this month</CardDescription>
             </div>
-            <Trophy className="h-5 w-5 text-amber-500" />
           </CardHeader>
           <CardContent className="px-0 sm:px-6">
             <div className="overflow-x-auto">
@@ -344,26 +244,24 @@ export default function Dashboard() {
                     <TableHead className="w-12 text-center">Rank</TableHead>
                     <TableHead>Employee</TableHead>
                     <TableHead className="text-center">Swears</TableHead>
-                    <TableHead className="text-right">Amount Owed</TableHead>
+                    <TableHead className="text-right">Owed</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {leaderboard.map((item, idx) => {
-                    const isWinner = idx === 0 && item.swearsCount > 0;
+                    const rank = getOffenderRank(item.swearsCount);
+                    const isMedalist = idx < 3 && item.swearsCount > 0;
                     return (
-                      <TableRow
-                        key={item.id}
-                        className={cn(
-                          'transition-colors duration-150',
-                          isWinner
-                            ? 'bg-amber-500/5 hover:bg-amber-500/10 dark:bg-amber-500/10 dark:hover:bg-amber-500/15'
-                            : ''
-                        )}
-                      >
-                        <TableCell className="text-center font-bold text-sm">
-                          {isWinner ? (
-                            <span className="inline-flex items-center justify-center bg-amber-500 text-white rounded-full p-1 shadow-sm">
-                              <Trophy className="h-4 w-4" />
+                      <TableRow key={item.id} className="transition-colors duration-150">
+                        <TableCell className="text-center font-mono tabular font-semibold text-sm">
+                          {isMedalist ? (
+                            <span
+                              className={cn(
+                                'inline-flex items-center justify-center h-6 w-6 rounded-full font-semibold',
+                                MEDAL_STYLES[idx]
+                              )}
+                            >
+                              {idx + 1}
                             </span>
                           ) : (
                             idx + 1
@@ -373,26 +271,31 @@ export default function Dashboard() {
                           <div className="flex items-center gap-3">
                             <div
                               className={cn(
-                                'h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-xs',
+                                'h-8 w-8 rounded-md flex items-center justify-center text-white text-xs font-bold shadow-xs shrink-0',
                                 item.avatar_color || 'bg-gray-400'
                               )}
                             >
                               {getInitials(item.name)}
                             </div>
-                            <span className="truncate max-w-[140px] sm:max-w-xs">{item.name}</span>
+                            <div className="min-w-0">
+                              <p className="truncate max-w-[140px] sm:max-w-xs leading-tight">{item.name}</p>
+                              <p className={cn('text-[11px] font-medium leading-tight', rank.colorClass)}>
+                                {rank.title}
+                                {item.streakDays !== null && item.swearsCount === 0 && (
+                                  <span className="text-muted-foreground font-normal">
+                                    {' '}
+                                    · {item.streakDays}d clean
+                                  </span>
+                                )}
+                              </p>
+                            </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center font-bold text-sm">
+                        <TableCell className="text-center font-mono tabular font-semibold text-sm">
                           {item.swearsCount}
                         </TableCell>
-                        <TableCell className="text-right font-bold text-sm text-foreground">
-                          <span
-                            className={cn(
-                              item.amountOwed > 0
-                                ? 'text-amber-600 dark:text-amber-400'
-                                : 'text-muted-foreground font-normal'
-                            )}
-                          >
+                        <TableCell className="text-right font-mono tabular font-semibold text-sm">
+                          <span className={item.amountOwed > 0 ? 'text-gold' : 'text-muted-foreground font-normal'}>
                             {formatCurrency(item.amountOwed)}
                           </span>
                         </TableCell>
@@ -405,44 +308,36 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Recent Activity List (1/3 width) */}
-        <Card className="border-border/40 bg-card/45 backdrop-blur-xs shadow-xs flex flex-col">
+        {/* Recent Activity List */}
+        <Card className="border-border bg-card shadow-ledger flex flex-col">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xl font-bold flex items-center justify-between">
-              <span>Recent Activity</span>
-              <Activity className="h-4 w-4 text-rose-500 animate-pulse" />
-            </CardTitle>
-            <CardDescription>Latest language violations</CardDescription>
+            <CardTitle className="font-heading text-lg">Recent activity</CardTitle>
+            <CardDescription>Latest citations logged</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col justify-between">
             <div className="space-y-4">
               {recentActivity.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground text-sm">
                   <HelpCircle className="h-8 w-8 mx-auto opacity-30 mb-2" />
-                  No swears recorded yet. Good job!
+                  No swears recorded yet.
                 </div>
               ) : (
                 recentActivity.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="flex gap-3 items-start p-2 rounded-lg hover:bg-secondary/40 transition-colors"
-                  >
+                  <div key={activity.id} className="flex gap-3 items-start p-2 rounded-md hover:bg-secondary/40 transition-colors">
                     <div
                       className={cn(
-                        'h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5 shadow-xs',
+                        'h-8 w-8 rounded-md flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5 shadow-xs',
                         activity.avatarColor
                       )}
                     >
                       {getInitials(activity.employeeName)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-foreground truncate">
-                        {activity.employeeName}
-                      </p>
+                      <p className="text-xs font-semibold text-foreground truncate">{activity.employeeName}</p>
                       <p className="text-xs text-muted-foreground italic truncate mt-0.5">
-                        &ldquo;{activity.note || 'Swore without an explanation'}&rdquo;
+                        &ldquo;{activity.note || 'No note left'}&rdquo;
                       </p>
-                      <p className="text-[10px] text-muted-foreground mt-1">
+                      <p className="text-[10px] text-muted-foreground mt-1 font-mono tabular">
                         {new Date(activity.created_at).toLocaleTimeString('en-US', {
                           hour: 'numeric',
                           minute: '2-digit',
@@ -453,12 +348,12 @@ export default function Dashboard() {
                 ))
               )}
             </div>
-            
+
             {recentActivity.length > 0 && (
-              <div className="pt-4 mt-4 border-t border-border/40">
+              <div className="pt-4 mt-4 border-t border-border">
                 <Link
                   href="/history"
-                  className="inline-flex items-center text-xs font-bold text-amber-500 hover:text-amber-600 transition-colors gap-1 group"
+                  className="inline-flex items-center text-xs font-semibold text-gold hover:text-gold/80 transition-colors gap-1 group"
                 >
                   View full history
                   <ChevronRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
@@ -469,92 +364,61 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Visual Analytics Section (Charts) */}
+      {/* Charts */}
       {chartData.length > 0 && (
-        <div className="grid gap-8 md:grid-cols-2">
-          {/* Bar Chart */}
-          <Card className="border-border/40 bg-card/45 backdrop-blur-xs">
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="border-border bg-card shadow-ledger">
             <CardHeader>
-              <CardTitle className="text-lg font-bold">Swears by Employee</CardTitle>
-              <CardDescription>Comparing absolute counts (current month)</CardDescription>
+              <CardTitle className="font-heading text-base">Swears by employee</CardTitle>
+              <CardDescription>Counts for the current month</CardDescription>
             </CardHeader>
-            <CardContent className="h-80 pt-4">
+            <CardContent className="h-72 pt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <XAxis
-                    dataKey="name"
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    allowDecimals={false}
-                  />
+                  <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
                   <Tooltip
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
                         return (
-                          <div className="bg-popover border border-border px-3 py-2 rounded-lg shadow-md text-xs">
-                            <p className="font-bold text-foreground">{data.fullName}</p>
-                            <p className="text-muted-foreground mt-1">
-                              Swears: <span className="font-bold text-foreground">{data.swears}</span>
+                          <div className="bg-popover border border-border px-3 py-2 rounded-md shadow-ledger text-xs">
+                            <p className="font-semibold text-foreground">{data.fullName}</p>
+                            <p className="text-muted-foreground mt-1 font-mono tabular">
+                              Swears: <span className="font-semibold text-foreground">{data.swears}</span>
                             </p>
-                            <p className="text-amber-500 font-semibold mt-0.5">
-                              Fines: <span>{formatCurrency(data.amount)}</span>
-                            </p>
+                            <p className="text-gold font-semibold mt-0.5 font-mono tabular">{formatCurrency(data.amount)}</p>
                           </div>
                         );
                       }
                       return null;
                     }}
                   />
-                  <Bar
-                    dataKey="swears"
-                    fill="url(#barGradient)"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={45}
-                  />
-                  <defs>
-                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f59e0b" />
-                      <stop offset="100%" stopColor="#ec4899" />
-                    </linearGradient>
-                  </defs>
+                  <Bar dataKey="swears" radius={[3, 3, 0, 0]} maxBarSize={40}>
+                    {chartData.map((_, index) => (
+                      <Cell key={index} fill={CHART_PALETTE[index % CHART_PALETTE.length]} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Pie Chart */}
-          <Card className="border-border/40 bg-card/45 backdrop-blur-xs">
+          <Card className="border-border bg-card shadow-ledger">
             <CardHeader>
-              <CardTitle className="text-lg font-bold">Contribution Share</CardTitle>
-              <CardDescription>Percentage distribution of total swears</CardDescription>
+              <CardTitle className="font-heading text-base">Contribution share</CardTitle>
+              <CardDescription>Percentage of total month swears</CardDescription>
             </CardHeader>
-            <CardContent className="h-80 flex items-center justify-center relative">
+            <CardContent className="h-72 flex items-center justify-center relative">
               <div className="w-full h-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie
-                      data={chartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={4}
-                      dataKey="swears"
-                    >
-                      {chartData.map((entry, index) => (
+                    <Pie data={chartData} cx="50%" cy="46%" innerRadius={56} outerRadius={76} paddingAngle={3} dataKey="swears">
+                      {chartData.map((_, index) => (
                         <Cell
-                          key={`cell-${index}`}
-                          fill={pieColors[index % pieColors.length]}
-                          className="stroke-background hover:opacity-95 cursor-pointer outline-hidden"
+                          key={index}
+                          fill={CHART_PALETTE[index % CHART_PALETTE.length]}
+                          className="stroke-background hover:opacity-90 cursor-pointer outline-hidden"
                         />
                       ))}
                     </Pie>
@@ -565,14 +429,9 @@ export default function Dashboard() {
                           const total = chartData.reduce((acc, curr) => acc + curr.swears, 0);
                           const percentage = ((data.swears / total) * 100).toFixed(1);
                           return (
-                            <div className="bg-popover border border-border px-3 py-2 rounded-lg shadow-md text-xs">
-                              <p className="font-bold text-foreground">{data.fullName}</p>
-                              <p className="text-muted-foreground mt-1">
-                                Swears: <span className="font-bold text-foreground">{data.swears}</span>
-                              </p>
-                              <p className="text-muted-foreground mt-0.5">
-                                Share: <span className="font-bold text-foreground">{percentage}%</span>
-                              </p>
+                            <div className="bg-popover border border-border px-3 py-2 rounded-md shadow-ledger text-xs">
+                              <p className="font-semibold text-foreground">{data.fullName}</p>
+                              <p className="text-muted-foreground mt-1 font-mono tabular">{percentage}% of total</p>
                             </div>
                           );
                         }
@@ -582,15 +441,11 @@ export default function Dashboard() {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              
-              {/* Legend overlay inside card */}
-              <div className="absolute bottom-4 left-0 right-0 flex flex-wrap justify-center gap-x-4 gap-y-1 px-4 text-[10px] text-muted-foreground">
+
+              <div className="absolute bottom-2 left-0 right-0 flex flex-wrap justify-center gap-x-4 gap-y-1 px-4 text-[10px] text-muted-foreground">
                 {chartData.map((entry, index) => (
                   <div key={entry.name} className="flex items-center gap-1.5">
-                    <span
-                      className="w-2.5 h-2.5 rounded-xs shrink-0"
-                      style={{ backgroundColor: pieColors[index % pieColors.length] }}
-                    />
+                    <span className="w-2.5 h-2.5 rounded-xs shrink-0" style={{ backgroundColor: CHART_PALETTE[index % CHART_PALETTE.length] }} />
                     <span>{entry.name}</span>
                   </div>
                 ))}
