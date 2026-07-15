@@ -39,101 +39,131 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
+  /* Game palette */
+  --color-crimson: var(--crimson);
+  --color-hot: var(--hot);
+  --color-hot-foreground: var(--hot-foreground);
   --color-gold: var(--gold);
   --color-gold-foreground: var(--gold-foreground);
   --color-danger: var(--danger);
-  --color-danger-foreground: var(--danger-foreground);
   --color-clean: var(--clean);
-  --color-clean-foreground: var(--clean-foreground);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --color-xp: var(--xp);
+
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-3xl: calc(var(--radius) * 2.6);
+  --radius-4xl: calc(var(--radius) * 3.2);
 }
 
+/*
+  GAME WORLD — crimson arcade.
+  One canvas (deep maroon), one hero accent (hot pink-red), gold reserved
+  strictly for currency/rewards. Light mode is a rose-tinted variant of the
+  same hue family so the app never flips identity between themes.
+*/
 :root {
-  /* Citation Ledger: warm paper + ink, one gold accent */
-  --background: #f6f0e2;
-  --foreground: #251d13;
-  --card: #fffbf1;
-  --card-foreground: #251d13;
-  --popover: #fffbf1;
-  --popover-foreground: #251d13;
-  --primary: #2a2118;
-  --primary-foreground: #fbf5e7;
-  --secondary: #ece0c4;
-  --secondary-foreground: #3a2f1e;
-  --muted: #ece2c8;
-  --muted-foreground: #85754f;
-  --accent: #ece0c4;
-  --accent-foreground: #2a2118;
-  --destructive: #a8433a;
-  --border: #e2d4ac;
-  --input: #e2d4ac;
-  --ring: #b8863a;
-  --gold: #a8722c;
-  --gold-foreground: #fffaf0;
-  --danger: #a8433a;
-  --danger-foreground: #fff6f4;
-  --clean: #3f7a5e;
-  --clean-foreground: #f2fbf6;
-  --chart-1: #a8722c;
-  --chart-2: #3f7a5e;
-  --chart-3: #a24a3a;
-  --chart-4: #4f6f8f;
-  --chart-5: #7c6a9b;
-  --radius: 0.55rem;
-  --sidebar: #f0e6cd;
-  --sidebar-foreground: #251d13;
-  --sidebar-primary: #2a2118;
-  --sidebar-primary-foreground: #fbf5e7;
-  --sidebar-accent: #ece0c4;
-  --sidebar-accent-foreground: #2a2118;
-  --sidebar-border: #e2d4ac;
-  --sidebar-ring: #b8863a;
+  --background: #f6e9ec;
+  --foreground: #2a0611;
+  --card: #ffffff;
+  --card-foreground: #2a0611;
+  --popover: #ffffff;
+  --popover-foreground: #2a0611;
+  --primary: #c8103c;
+  --primary-foreground: #fff5f7;
+  --secondary: #f7dbe2;
+  --secondary-foreground: #6b0a22;
+  --muted: #f2dde2;
+  --muted-foreground: #9c5567;
+  --accent: #f7dbe2;
+  --accent-foreground: #6b0a22;
+  --destructive: #c8103c;
+  --border: #e9c4ce;
+  --input: #e9c4ce;
+  --ring: #ff2e63;
+
+  --crimson: #c8103c;
+  --hot: #e01048;
+  --hot-foreground: #fff5f7;
+  --gold: #b87500;
+  --gold-foreground: #2a1600;
+  --danger: #c8103c;
+  --clean: #2f8f6a;
+  --xp: #e01048;
+
+  --chart-1: #e01048;
+  --chart-2: #b87500;
+  --chart-3: #2f8f6a;
+  --chart-4: #7b3fb5;
+  --chart-5: #1f6f9c;
+
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-brd: rgba(255, 255, 255, 0.9);
+  --glass-inner: rgba(200, 16, 60, 0.06);
+  --glass-shadow: rgba(90, 8, 28, 0.16);
+
+  --radius: 0.9rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #2a0611;
+  --sidebar-primary: #e01048;
+  --sidebar-primary-foreground: #fff5f7;
+  --sidebar-accent: #f7dbe2;
+  --sidebar-accent-foreground: #6b0a22;
+  --sidebar-border: #e9c4ce;
+  --sidebar-ring: #ff2e63;
 }
 
 .dark {
-  --background: #17130e;
-  --foreground: #f1e7d3;
-  --card: #221c14;
-  --card-foreground: #f1e7d3;
-  --popover: #221c14;
-  --popover-foreground: #f1e7d3;
-  --primary: #f1e7d3;
-  --primary-foreground: #221c14;
-  --secondary: #2c2419;
-  --secondary-foreground: #f1e7d3;
-  --muted: #2c2419;
-  --muted-foreground: #a89876;
-  --accent: #2c2419;
-  --accent-foreground: #f1e7d3;
-  --destructive: #c7594c;
-  --border: rgba(241, 231, 211, 0.1);
-  --input: rgba(241, 231, 211, 0.12);
-  --ring: #d9a45c;
-  --gold: #d9a45c;
-  --gold-foreground: #221405;
-  --danger: #c7594c;
-  --danger-foreground: #2a0d09;
-  --clean: #5aa083;
-  --clean-foreground: #08150f;
-  --chart-1: #d9a45c;
-  --chart-2: #5aa083;
-  --chart-3: #c26c58;
-  --chart-4: #7b9cbc;
-  --chart-5: #a894c4;
-  --sidebar: #1c1710;
-  --sidebar-foreground: #f1e7d3;
-  --sidebar-primary: #d9a45c;
-  --sidebar-primary-foreground: #221405;
-  --sidebar-accent: #2c2419;
-  --sidebar-accent-foreground: #f1e7d3;
-  --sidebar-border: rgba(241, 231, 211, 0.1);
-  --sidebar-ring: #d9a45c;
+  --background: #1d0410;
+  --foreground: #ffeaf0;
+  --card: #3a0a1d;
+  --card-foreground: #ffeaf0;
+  --popover: #400c20;
+  --popover-foreground: #ffeaf0;
+  --primary: #ff2e63;
+  --primary-foreground: #2a0611;
+  --secondary: #4d0f26;
+  --secondary-foreground: #ffeaf0;
+  --muted: #480e23;
+  --muted-foreground: #d79aae;
+  --accent: #4d0f26;
+  --accent-foreground: #ffeaf0;
+  --destructive: #ff4d70;
+  --border: rgba(255, 138, 170, 0.18);
+  --input: rgba(255, 138, 170, 0.22);
+  --ring: #ff2e63;
+
+  --crimson: #c8103c;
+  --hot: #ff2e63;
+  --hot-foreground: #2a0611;
+  --gold: #ffb800;
+  --gold-foreground: #2a1600;
+  --danger: #ff4d70;
+  --clean: #34d399;
+  --xp: #ff2e63;
+
+  --chart-1: #ff2e63;
+  --chart-2: #ffb800;
+  --chart-3: #34d399;
+  --chart-4: #a78bfa;
+  --chart-5: #38bdf8;
+
+  --glass-bg: rgba(255, 90, 130, 0.07);
+  --glass-brd: rgba(255, 170, 195, 0.16);
+  --glass-inner: rgba(255, 255, 255, 0.06);
+  --glass-shadow: rgba(0, 0, 0, 0.5);
+
+  --sidebar: #2b0616;
+  --sidebar-foreground: #ffeaf0;
+  --sidebar-primary: #ff2e63;
+  --sidebar-primary-foreground: #2a0611;
+  --sidebar-accent: #4d0f26;
+  --sidebar-accent-foreground: #ffeaf0;
+  --sidebar-border: rgba(255, 138, 170, 0.18);
+  --sidebar-ring: #ff2e63;
 }
 
 @layer base {
@@ -151,35 +181,79 @@
   }
 }
 
-/* Fixed paper-grain overlay so surfaces never read as flat vector fills */
+/* Ambient arena light — radial pools, not a flat fill or a 45° fade */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 55% at 12% 0%, rgba(255, 46, 99, 0.18), transparent 60%),
+    radial-gradient(60% 50% at 100% 8%, rgba(200, 16, 60, 0.16), transparent 62%),
+    radial-gradient(80% 60% at 50% 108%, rgba(120, 8, 40, 0.22), transparent 60%);
+}
+
+.dark body::after {
+  background:
+    radial-gradient(70% 55% at 12% 0%, rgba(255, 46, 99, 0.2), transparent 60%),
+    radial-gradient(60% 50% at 100% 8%, rgba(255, 90, 130, 0.13), transparent 62%),
+    radial-gradient(85% 60% at 50% 108%, rgba(255, 46, 99, 0.1), transparent 60%);
+}
+
+/* Grain, so the big flat crimson fields don't read as vector slop */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: 60;
   pointer-events: none;
-  opacity: 0.05;
+  opacity: 0.045;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-.dark body::before {
-  opacity: 0.07;
+/*
+  True glass: blur + saturate, a 1px light edge, and an inner top highlight
+  to fake edge refraction. Not just backdrop-blur.
+*/
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--glass-brd);
+  box-shadow:
+    0 1px 0 0 var(--glass-inner) inset,
+    0 18px 40px -18px var(--glass-shadow);
 }
 
-/* Tinted shadows carrying the ink hue, instead of generic black */
-.shadow-ledger {
-  box-shadow: 0 1px 2px rgba(37, 29, 19, 0.06), 0 12px 28px -12px rgba(37, 29, 19, 0.25);
+.glass-strong {
+  background: color-mix(in oklch, var(--card) 82%, transparent);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--glass-brd);
+  box-shadow:
+    0 1px 0 0 var(--glass-inner) inset,
+    0 24px 50px -20px var(--glass-shadow);
 }
 
-.dark .shadow-ledger {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 16px 32px -12px rgba(0, 0, 0, 0.55);
+.glow-hot {
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--hot) 35%, transparent),
+    0 8px 30px -6px color-mix(in oklch, var(--hot) 55%, transparent);
+}
+
+.text-glow {
+  text-shadow: 0 0 22px color-mix(in oklch, var(--hot) 60%, transparent);
 }
 
 .tabular {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
 }
+
+/* Hide scrollbars on horizontal rails without losing scroll */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 @keyframes wiggle {
   0%, 100% { transform: rotate(0deg); }
@@ -193,15 +267,35 @@ body::before {
   100% { transform: scale(1); }
 }
 
-.animate-wiggle {
-  animation: wiggle 0.2s ease-in-out;
+.animate-wiggle { animation: wiggle 0.2s ease-in-out; }
+.animate-pop { animation: pop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+@keyframes sheen {
+  0% { transform: translateX(-120%) skewX(-18deg); }
+  100% { transform: translateX(320%) skewX(-18deg); }
 }
 
-.animate-pop {
-  animation: pop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+/* XP bar sheen sweep */
+.sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: sheen 2.6s ease-in-out infinite;
 }
 
-@keyframes jar-bob {
+@keyframes float-y {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float { animation: float-y 4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .sheen::after, .animate-float { animation: none; }
 }

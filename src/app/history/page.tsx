@@ -2,22 +2,16 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { motion } from 'motion/react';
 import { db, type Employee, type Swear } from '@/lib/db';
-import { getInitials, getRelativeTimeString, formatCurrency } from '@/lib/utils';
+import { getRelativeTimeString, formatCurrency } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
-import {
-  ArrowLeft,
-  Trash2,
-  Search,
-  Calendar,
-  HelpCircle,
-  Clock,
-} from 'lucide-react';
+import { GiScrollQuill, GiTrashCan } from 'react-icons/gi';
+import { ArrowLeft, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AvatarSprite } from '@/components/GameAvatar';
 import { toast } from 'sonner';
 
 export default function History() {
@@ -27,25 +21,23 @@ export default function History() {
   const [pricePerSwear, setPricePerSwear] = React.useState<number>(5);
   const [loading, setLoading] = React.useState(true);
 
-  // Search & Filter state
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedEmployeeId, setSelectedEmployeeId] = React.useState<string>('all');
-  const handleEmployeeChange = (val: string | null) => {
-    setSelectedEmployeeId(val || 'all');
-  };
 
   React.useEffect(() => {
     async function loadData() {
       try {
-        const emps = await db.getEmployees();
-        const sws = await db.getSwears();
-        const price = await db.getPricePerSwear();
+        const [emps, sws, price] = await Promise.all([
+          db.getEmployees(),
+          db.getSwears(),
+          db.getPricePerSwear(),
+        ]);
         setEmployees(emps);
         setSwears(sws);
         setPricePerSwear(price);
       } catch (error) {
         console.error('Failed to load history data:', error);
-        toast.error('Could not load history.');
+        toast.error('Could not load the log.');
       } finally {
         setLoading(false);
       }
@@ -58,98 +50,72 @@ export default function History() {
     try {
       await db.deleteSwear(id);
       setSwears((prev) => prev.filter((s) => s.id !== id));
-      toast.success(`Deleted swear entry for ${empName}.`, {
-        description: 'Jar totals updated.',
-      });
+      toast.success(`Strike removed for ${empName}.`, { description: 'Jar totals updated.' });
     } catch (error) {
       console.error('Failed to delete swear:', error);
-      toast.error('Failed to delete swear entry.');
+      toast.error('Could not delete that strike.');
     }
   };
 
-  // Filtered swears list
-  const filteredSwears = React.useMemo(() => {
+  const filtered = React.useMemo(() => {
     return swears
       .map((s) => {
         const emp = employees.find((e) => e.id === s.employee_id);
-        return {
-          ...s,
-          employee: emp,
-          employeeName: emp ? emp.name : 'Unknown Employee',
-          avatarColor: emp ? emp.avatar_color : 'bg-gray-400',
-        };
+        return { ...s, employeeName: emp ? emp.name : 'Unknown player' };
       })
       .filter((s) => {
         const matchesSearch = s.note
           ? s.note.toLowerCase().includes(searchQuery.toLowerCase())
           : searchQuery === '';
-        
-        const matchesEmployee =
-          selectedEmployeeId === 'all' || s.employee_id === selectedEmployeeId;
-
+        const matchesEmployee = selectedEmployeeId === 'all' || s.employee_id === selectedEmployeeId;
         return matchesSearch && matchesEmployee;
       });
   }, [swears, employees, searchQuery, selectedEmployeeId]);
 
   if (loading) {
     return (
-      <div className="space-y-8 animate-pulse">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 bg-muted rounded-md" />
-          <div className="h-8 w-36 bg-muted rounded-md" />
-        </div>
-        <div className="flex gap-4">
-          <div className="h-10 flex-1 bg-muted rounded-md" />
-          <div className="h-10 w-44 bg-muted rounded-md" />
-        </div>
-        <Card className="border-border">
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-14 bg-muted rounded" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      <div className="space-y-5">
+        <div className="h-10 w-44 animate-pulse rounded-xl bg-foreground/10" />
+        <div className="h-12 animate-pulse rounded-2xl bg-foreground/10" />
+        <div className="h-96 animate-pulse rounded-3xl bg-foreground/10" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Title block */}
+    <div className="mx-auto max-w-5xl space-y-5">
       <div className="flex items-center gap-2">
-        <Link href="/" className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground transition-all">
-          <ArrowLeft className="h-5 w-5" />
+        <Link
+          href="/"
+          className="glass inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
           <span className="sr-only">Back</span>
         </Link>
         <div>
-          <h1 className="text-2xl font-heading font-semibold tracking-tight sm:text-3xl">Swear History</h1>
-          <p className="text-xs text-muted-foreground sm:text-sm">Full audit log of every citation and fine.</p>
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.3em] text-hot">Archive</p>
+          <h1 className="font-heading text-2xl font-bold sm:text-3xl">Strike log</h1>
         </div>
       </div>
 
-      {/* Filter panel */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        {/* Search */}
+      {/* Filters */}
+      <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search notes..."
+            placeholder="Search notes…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 bg-card border-border focus-visible:border-gold focus-visible:ring-gold/20"
+            className="h-10 border-border bg-card/40 pl-9 focus-visible:border-hot focus-visible:ring-hot/20"
           />
         </div>
-
-        {/* Employee select */}
         <div className="w-full sm:w-56">
-          <Select value={selectedEmployeeId} onValueChange={handleEmployeeChange}>
-            <SelectTrigger className="bg-card border-border">
-              <SelectValue placeholder="Filter by employee" />
+          <Select value={selectedEmployeeId} onValueChange={(v) => setSelectedEmployeeId(v || 'all')}>
+            <SelectTrigger className="h-10 border-border bg-card/40">
+              <SelectValue placeholder="Filter by player" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All employees</SelectItem>
+              <SelectItem value="all">All players</SelectItem>
               {employees.map((emp) => (
                 <SelectItem key={emp.id} value={emp.id}>
                   {emp.name}
@@ -160,108 +126,64 @@ export default function History() {
         </div>
       </div>
 
-      {/* History table */}
-      <Card className="border-border bg-card shadow-ledger">
-        <CardHeader className="pb-2">
-          <CardTitle className="font-heading text-lg">Logged entries</CardTitle>
-          <CardDescription>
-            Showing {filteredSwears.length} of {swears.length} recorded swears
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-0 sm:px-6">
-          {filteredSwears.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground">
-              <HelpCircle className="h-10 w-10 mx-auto opacity-30 mb-2" />
-              <p className="font-medium text-sm">No matches found</p>
-              <p className="text-xs mt-1">Try resetting your search query or employee filter.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Slip-up / Note</TableHead>
-                    <TableHead className="hidden md:table-cell">Date & Time</TableHead>
-                    <TableHead className="table-cell md:hidden">Time</TableHead>
-                    <TableHead className="text-right">Fine</TableHead>
-                    {isAdmin && <TableHead className="w-12 text-center">Action</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredSwears.map((item) => (
-                    <TableRow key={item.id} className="hover:bg-secondary/20 transition-colors">
-                      <TableCell className="font-semibold">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`h-8 w-8 rounded-md flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-xs ${
-                              item.avatarColor
-                            }`}
-                          >
-                            {getInitials(item.employeeName)}
-                          </div>
-                          <span className="truncate max-w-[120px] sm:max-w-xs">{item.employeeName}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-[150px] sm:max-w-md">
-                        {item.note ? (
-                          <span className="text-foreground text-sm italic font-medium">
-                            &ldquo;{item.note}&rdquo;
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground text-xs italic">No note provided</span>
-                        )}
-                      </TableCell>
-                      {/* Desktop date */}
-                      <TableCell className="hidden md:table-cell text-muted-foreground text-xs whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="h-3.5 w-3.5" />
-                          <span>
-                            {new Date(item.created_at).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
-                          </span>
-                          <span className="text-border">|</span>
-                          <Clock className="h-3.5 w-3.5" />
-                          <span>
-                            {new Date(item.created_at).toLocaleTimeString('en-US', {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                        </div>
-                      </TableCell>
-                      {/* Mobile relative time */}
-                      <TableCell className="table-cell md:hidden text-muted-foreground text-xs whitespace-nowrap">
-                        {getRelativeTimeString(item.created_at)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono tabular font-semibold text-sm text-gold">
-                        {formatCurrency(pricePerSwear)}
-                      </TableCell>
-                      {isAdmin && (
-                        <TableCell className="text-center">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteSwear(item.id, item.employeeName)}
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                            title="Delete Entry"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Delete</span>
-                          </Button>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="glass overflow-hidden rounded-3xl">
+        <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+          <h2 className="font-heading text-sm font-bold">Logged strikes</h2>
+          <span className="font-mono text-[10px] tabular text-muted-foreground">
+            {filtered.length} of {swears.length}
+          </span>
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="py-16 text-center text-muted-foreground">
+            <GiScrollQuill className="mx-auto mb-2 h-10 w-10 opacity-30" />
+            <p className="text-sm font-semibold">No strikes found</p>
+            <p className="mt-1 text-xs">Try clearing the search or filter.</p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-border/60">
+            {filtered.map((item, i) => (
+              <motion.li
+                key={item.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: Math.min(i * 0.02, 0.3) }}
+                className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-foreground/[0.04]"
+              >
+                <AvatarSprite seed={item.employeeName} size={36} />
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{item.employeeName}</p>
+                  <p className="truncate text-xs italic text-muted-foreground">
+                    {item.note ? `“${item.note}”` : 'No note left'}
+                  </p>
+                </div>
+
+                <span className="hidden shrink-0 font-mono text-[10px] tabular text-muted-foreground sm:block">
+                  {getRelativeTimeString(item.created_at)}
+                </span>
+
+                <span className="shrink-0 font-mono text-sm font-bold tabular text-gold">
+                  {formatCurrency(pricePerSwear)}
+                </span>
+
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDeleteSwear(item.id, item.employeeName)}
+                    className="h-8 w-8 shrink-0 text-muted-foreground hover:bg-danger/10 hover:text-danger"
+                    title="Delete strike"
+                  >
+                    <GiTrashCan className="h-4 w-4" />
+                    <span className="sr-only">Delete strike for {item.employeeName}</span>
+                  </Button>
+                )}
+              </motion.li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

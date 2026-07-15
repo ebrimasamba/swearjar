@@ -2,22 +2,12 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { motion } from 'motion/react';
 import { db, type Employee } from '@/lib/db';
-import { getInitials, cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
-import {
-  ArrowLeft,
-  UserPlus,
-  Edit2,
-  Trash2,
-  AlertTriangle,
-  Calendar,
-  HelpCircle,
-  Lock,
-} from 'lucide-react';
+import { GiPerson, GiPadlock, GiTrashCan } from 'react-icons/gi';
+import { ArrowLeft, Pencil, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -28,40 +18,37 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { AvatarSprite } from '@/components/GameAvatar';
 import { toast } from 'sonner';
 
 export default function Employees() {
   const { isAdmin } = useAuth();
   const [employees, setEmployees] = React.useState<Employee[]>([]);
   const [loading, setLoading] = React.useState(true);
-
-  // Forms states
   const [newEmployeeName, setNewEmployeeName] = React.useState('');
-  
-  // Dialog controls
-  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
-  const [editingEmployee, setEditingEmployee] = React.useState<Employee | null>(null);
+
+  const [isEditOpen, setIsEditOpen] = React.useState(false);
+  const [editing, setEditing] = React.useState<Employee | null>(null);
   const [editedName, setEditedName] = React.useState('');
 
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-  const [deletingEmployee, setDeletingEmployee] = React.useState<Employee | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
+  const [deleting, setDeleting] = React.useState<Employee | null>(null);
 
   React.useEffect(() => {
-    async function loadEmployees() {
+    async function load() {
       try {
-        const emps = await db.getEmployees();
-        setEmployees(emps);
+        setEmployees(await db.getEmployees());
       } catch (error) {
         console.error('Failed to load employees:', error);
-        toast.error('Failed to load employee list.');
+        toast.error('Failed to load the roster.');
       } finally {
         setLoading(false);
       }
     }
-    loadEmployees();
+    load();
   }, []);
 
-  const handleAddEmployee = async (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAdmin) return;
     const name = newEmployeeName.trim();
@@ -69,284 +56,244 @@ export default function Employees() {
       toast.warning('Name cannot be empty.');
       return;
     }
-
     try {
-      const newEmp = await db.addEmployee(name);
-      setEmployees((prev) => [...prev, newEmp].sort((a, b) => a.name.localeCompare(b.name)));
+      const created = await db.addEmployee(name);
+      setEmployees((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
       setNewEmployeeName('');
-      toast.success(`${name} added to the roster.`);
+      toast.success(`${name} joined the arena.`);
     } catch (error) {
       console.error('Failed to add employee:', error);
-      toast.error('Could not add employee. Try again.');
+      toast.error('Could not add player. Try again.');
     }
   };
 
-  const handleOpenEditDialog = (emp: Employee) => {
-    setEditingEmployee(emp);
-    setEditedName(emp.name);
-    setIsEditDialogOpen(true);
-  };
-
   const handleSaveEdit = async () => {
-    if (!isAdmin || !editingEmployee) return;
+    if (!isAdmin || !editing) return;
     const name = editedName.trim();
     if (!name) {
       toast.warning('Name cannot be empty.');
       return;
     }
-
     try {
-      const updated = await db.updateEmployee(editingEmployee.id, name);
+      const updated = await db.updateEmployee(editing.id, name);
       setEmployees((prev) =>
-        prev
-          .map((e) => (e.id === editingEmployee.id ? updated : e))
-          .sort((a, b) => a.name.localeCompare(b.name))
+        prev.map((e) => (e.id === editing.id ? updated : e)).sort((a, b) => a.name.localeCompare(b.name))
       );
-      setIsEditDialogOpen(false);
-      setEditingEmployee(null);
-      toast.success(`Name updated to ${name}.`);
+      setIsEditOpen(false);
+      setEditing(null);
+      toast.success(`Renamed to ${name}.`);
     } catch (error) {
       console.error('Failed to update employee name:', error);
-      toast.error('Could not update employee. Try again.');
+      toast.error('Could not rename player. Try again.');
     }
   };
 
-  const handleOpenDeleteDialog = (emp: Employee) => {
-    setDeletingEmployee(emp);
-    setIsDeleteDialogOpen(true);
-  };
-
   const handleConfirmDelete = async () => {
-    if (!isAdmin || !deletingEmployee) return;
-
+    if (!isAdmin || !deleting) return;
     try {
-      await db.deleteEmployee(deletingEmployee.id);
-      setEmployees((prev) => prev.filter((e) => e.id !== deletingEmployee.id));
-      setIsDeleteDialogOpen(false);
-      setDeletingEmployee(null);
-      toast.success(`Removed ${deletingEmployee.name} from the roster.`, {
-        description: 'Their swear records were deleted too.',
-      });
+      await db.deleteEmployee(deleting.id);
+      setEmployees((prev) => prev.filter((e) => e.id !== deleting.id));
+      setIsDeleteOpen(false);
+      setDeleting(null);
+      toast.success(`${deleting.name} left the arena.`, { description: 'Their strikes were deleted too.' });
     } catch (error) {
       console.error('Failed to delete employee:', error);
-      toast.error('Could not remove employee. Try again.');
+      toast.error('Could not remove player. Try again.');
     }
   };
 
   if (loading) {
     return (
-      <div className="space-y-8 animate-pulse">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 bg-muted rounded-md" />
-          <div className="h-8 w-40 bg-muted rounded-md" />
-        </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card className="h-40 bg-muted border-border" />
-          <Card className="h-48 md:col-span-2 bg-muted border-border" />
+      <div className="space-y-5">
+        <div className="h-10 w-44 animate-pulse rounded-xl bg-foreground/10" />
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="h-44 animate-pulse rounded-3xl bg-foreground/10" />
+          <div className="h-72 animate-pulse rounded-3xl bg-foreground/10 md:col-span-2" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Page Title */}
+    <div className="mx-auto max-w-5xl space-y-5">
       <div className="flex items-center gap-2">
-        <Link href="/" className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground transition-all">
-          <ArrowLeft className="h-5 w-5" />
+        <Link
+          href="/"
+          className="glass inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
           <span className="sr-only">Back</span>
         </Link>
         <div>
-          <h1 className="text-2xl font-heading font-semibold tracking-tight sm:text-3xl">Manage Employees</h1>
-          <p className="text-xs text-muted-foreground sm:text-sm">Add, rename, or remove people from the roster.</p>
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.3em] text-hot">Roster</p>
+          <h1 className="font-heading text-2xl font-bold sm:text-3xl">Players</h1>
         </div>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-3">
-        {/* Left Side: Add Form (admin only) */}
-        <Card className="border-border bg-card shadow-ledger h-fit">
-          <CardHeader>
-            <CardTitle className="font-heading text-lg">Add employee</CardTitle>
-            <CardDescription>Enroll someone in the tracker</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isAdmin ? (
-              <form onSubmit={handleAddEmployee} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="employee-name">Full name</Label>
-                  <Input
-                    id="employee-name"
-                    placeholder="e.g. Creed Bratton"
-                    value={newEmployeeName}
-                    onChange={(e) => setNewEmployeeName(e.target.value)}
-                    className="bg-background border-border"
-                    maxLength={50}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-gold-foreground font-medium gap-2">
-                  <UserPlus className="h-4 w-4" />
-                  Add employee
-                </Button>
-              </form>
-            ) : (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
-                <Lock className="h-4 w-4 shrink-0" />
-                <span>
-                  <Link href="/login" className="font-medium text-foreground hover:underline">
-                    Sign in as admin
-                  </Link>{' '}
-                  to add employees.
-                </span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 md:grid-cols-3">
+        {/* Add */}
+        <section className="glass h-fit rounded-3xl p-5">
+          <h2 className="font-heading text-base font-bold">Add player</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">Enroll someone in the arena</p>
 
-        {/* Right Side: Roster Table */}
-        <Card className="md:col-span-2 border-border bg-card shadow-ledger">
-          <CardHeader>
-            <CardTitle className="font-heading text-lg flex items-center justify-between">
-              <span>Roster</span>
-              <span className="text-xs font-mono tabular font-medium px-2 py-0.5 bg-secondary text-muted-foreground border border-border rounded-md">
-                {employees.length} active
+          {isAdmin ? (
+            <form onSubmit={handleAdd} className="mt-4 space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="employee-name" className="text-xs">
+                  Full name
+                </Label>
+                <Input
+                  id="employee-name"
+                  placeholder="e.g. Creed Bratton"
+                  value={newEmployeeName}
+                  onChange={(e) => setNewEmployeeName(e.target.value)}
+                  className="h-10 border-border bg-background/40 focus-visible:border-hot focus-visible:ring-hot/20"
+                  maxLength={50}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full gap-2 bg-hot font-semibold text-hot-foreground hover:bg-hot/90">
+                <GiPerson className="h-4 w-4" />
+                Add player
+              </Button>
+            </form>
+          ) : (
+            <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+              <GiPadlock className="h-4 w-4 shrink-0" />
+              <span>
+                <Link href="/login" className="font-semibold text-hot hover:underline">
+                  Sign in as admin
+                </Link>{' '}
+                to add players.
               </span>
-            </CardTitle>
-            <CardDescription>Everyone currently tracked</CardDescription>
-          </CardHeader>
-          <CardContent className="px-0 sm:px-6">
-            {employees.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <HelpCircle className="h-10 w-10 mx-auto opacity-30 mb-2" />
-                <p className="font-semibold text-sm">Roster is empty</p>
-                <p className="text-xs mt-1">Use the panel on the left to add your first employee.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead>Employee</TableHead>
-                      <TableHead className="hidden sm:table-cell">Added Date</TableHead>
-                      {isAdmin && <TableHead className="w-24 text-right">Actions</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {employees.map((emp) => (
-                      <TableRow key={emp.id} className="hover:bg-secondary/20 transition-colors">
-                        <TableCell className="font-semibold">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={cn(
-                                'h-8 w-8 rounded-md flex items-center justify-center text-white text-xs font-bold shadow-xs',
-                                emp.avatar_color || 'bg-gray-400'
-                              )}
-                            >
-                              {getInitials(emp.name)}
-                            </div>
-                            <span className="truncate max-w-[150px] sm:max-w-xs">{emp.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell text-muted-foreground text-xs">
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="h-3.5 w-3.5" />
-                            <span>
-                              {new Date(emp.created_at).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}
-                            </span>
-                          </div>
-                        </TableCell>
-                        {isAdmin && (
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleOpenEditDialog(emp)}
-                                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                                title="Edit Name"
-                              >
-                                <Edit2 className="h-4 w-4" />
-                                <span className="sr-only">Edit</span>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleOpenDeleteDialog(emp)}
-                                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                title="Delete Employee"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Delete</span>
-                              </Button>
-                            </div>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </p>
+          )}
+        </section>
+
+        {/* Roster */}
+        <section className="glass overflow-hidden rounded-3xl md:col-span-2">
+          <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+            <h2 className="font-heading text-sm font-bold">Active roster</h2>
+            <span className="rounded-md border border-border px-1.5 py-0.5 font-mono text-[10px] tabular text-muted-foreground">
+              {employees.length} players
+            </span>
+          </div>
+
+          {employees.length === 0 ? (
+            <div className="py-14 text-center text-muted-foreground">
+              <GiPerson className="mx-auto mb-2 h-10 w-10 opacity-30" />
+              <p className="text-sm font-semibold">Roster is empty</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-border/60">
+              {employees.map((emp, i) => (
+                <motion.li
+                  key={emp.id}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                  className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-foreground/[0.04]"
+                >
+                  <AvatarSprite seed={emp.name} size={40} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{emp.name}</p>
+                    <p className="font-mono text-[10px] tabular text-muted-foreground">
+                      joined{' '}
+                      {new Date(emp.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </p>
+                  </div>
+
+                  {isAdmin && (
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditing(emp);
+                          setEditedName(emp.name);
+                          setIsEditOpen(true);
+                        }}
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        title="Rename"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        <span className="sr-only">Rename {emp.name}</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setDeleting(emp);
+                          setIsDeleteOpen(true);
+                        }}
+                        className="h-8 w-8 text-muted-foreground hover:bg-danger/10 hover:text-danger"
+                        title="Remove"
+                      >
+                        <GiTrashCan className="h-4 w-4" />
+                        <span className="sr-only">Remove {emp.name}</span>
+                      </Button>
+                    </div>
+                  )}
+                </motion.li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
 
-      {/* Rename Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      {/* Rename */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Rename Employee</DialogTitle>
-            <DialogDescription>
-              Update the name for this team member. This change updates all dashboard stats immediately.
-            </DialogDescription>
+            <DialogTitle className="font-heading">Rename player</DialogTitle>
+            <DialogDescription>Updates their name everywhere immediately.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="edit-name">Name</Label>
-              <Input
-                id="edit-name"
-                value={editedName}
-                onChange={(e) => setEditedName(e.target.value)}
-                maxLength={50}
-                className="col-span-3"
-              />
-            </div>
+          <div className="grid gap-2 py-3">
+            <Label htmlFor="edit-name" className="text-xs">
+              Name
+            </Label>
+            <Input
+              id="edit-name"
+              value={editedName}
+              onChange={(e) => setEditedName(e.target.value)}
+              maxLength={50}
+              className="h-10"
+            />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSaveEdit} className="bg-gold hover:bg-gold/90 text-gold-foreground font-medium">
+            <Button onClick={handleSaveEdit} className="bg-hot font-semibold text-hot-foreground hover:bg-hot/90">
               Save changes
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] border-destructive/20">
+      {/* Delete */}
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
+            <DialogTitle className="flex items-center gap-2 font-heading text-danger">
               <AlertTriangle className="h-5 w-5" />
-              <span>Confirm Deletion</span>
+              Remove player
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to remove <span className="font-semibold text-foreground">{deletingEmployee?.name}</span>?
-              <br />
-              This action <span className="font-bold text-destructive">cannot be undone</span>. All associated swear logs and contributions will be permanently deleted.
+              Remove <span className="font-semibold text-foreground">{deleting?.name}</span> from the arena? This also
+              deletes all their logged strikes and cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="mt-4 gap-2">
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+          <DialogFooter className="mt-3 gap-2">
+            <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleConfirmDelete}>
-              Delete Roster Entry
+              Remove player
             </Button>
           </DialogFooter>
         </DialogContent>
