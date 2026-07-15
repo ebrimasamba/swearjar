@@ -15,6 +15,7 @@ import {
   GiGears,
   GiJerrycan,
   GiShieldBounces,
+  GiScales,
 } from 'react-icons/gi';
 import { LogIn, LogOut } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -35,6 +36,7 @@ const NAV = [
   { name: 'Log', href: '/history', Icon: GiScrollQuill },
   { name: 'Seasons', href: '/months', Icon: GiCalendar },
   { name: 'Roster', href: '/employees', Icon: GiPerson },
+  { name: 'The Law', href: '/constitution', Icon: GiScales },
   { name: 'Config', href: '/settings', Icon: GiGears },
 ];
 
