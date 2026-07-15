@@ -6,6 +6,7 @@ import {
   GiBanknote,
   GiCancel,
   GiFeather,
+  GiHotMeal,
 } from 'react-icons/gi';
 
 /**
@@ -44,7 +45,7 @@ export const ARTICLES: Article[] = [
     Icon: GiScales,
     gist: 'The jar exists. Everyone is in it. It is not a punishment.',
     clauses: [
-      { n: '1.1', text: 'There shall be a Jar. Into the Jar shall go the tariff of every Strike, and out of the Jar shall come something the Office enjoys together.' },
+      { n: '1.1', text: 'There shall be a Jar. Into the Jar shall go the tariff of every Strike, and out of it, at the close of each month, shall come something the Office enjoys together — see Article VI.' },
       { n: '1.2', text: 'Every Member of the Office is subject to this Constitution equally, without regard to seniority, tenure, or the strength of their opinions about the printer.' },
       { n: '1.3', text: 'The Jar is a game, not a tribunal. No Strike shall be entered in anger, and no Member shall be made to feel that the Jar is aimed at them in particular.' },
       { n: '1.4', text: 'The Keeper of the Jar administers these rules and keeps the ledger. The Keeper is not exempt from them.' },
@@ -89,7 +90,7 @@ export const ARTICLES: Article[] = [
       { n: '4.4', text: 'The Accused may concede at once, which resolves the matter and reflects well on them.' },
       { n: '4.5', text: 'Where the Accused disputes the charge and no Witness comes forward, no Strike is recorded. The Jar would rather miss one than invent one.' },
       { n: '4.6', text: 'An accusation shall be raised at the time, or not at all. Strikes recalled three days later are hearsay and are inadmissible.' },
-      { n: '4.7', text: 'Once Accuser and Witness agree, the Keeper records the Strike. Recorded in error, it may be struck from the ledger — see Article VI.' },
+      { n: '4.7', text: 'Once Accuser and Witness agree, the Keeper records the Strike. Recorded in error, it may be struck from the ledger — see Article VII.' },
     ],
   },
   {
@@ -106,15 +107,37 @@ export const ARTICLES: Article[] = [
   },
   {
     numeral: 'VI',
+    title: 'Of the Disbursement of the Jar',
+    Icon: GiHotMeal,
+    gist: 'At the end of every month the jar is spent on the Office. That is the whole point.',
+    clauses: [
+      { n: '6.1', text: 'At the close of each month the Jar shall be emptied and spent upon the Office. The Jar is not a savings account, and money is not collected for the pleasure of collecting it.' },
+      { n: '6.2', text: 'Permitted purposes are: a staff dinner; food for the Office; the organising of a match or fixture; a trip; a gift to charity; or any other thing the Office resolves to enjoy together.' },
+      { n: '6.3', text: 'The Office chooses the purpose, not the Keeper alone. Where opinion is divided, the Office shall vote, and the Keeper shall count honestly.' },
+      { n: '6.4', text: 'No Member shall be barred from the spoils on account of their Strikes. He who fills the Jar shall eat from it, and shall be served first if there is any justice at all.' },
+      { n: '6.5', text: 'The Jar shall never be paid to an individual, nor spent on a thing the Office was going to have to buy anyway. It is not a budget line and shall not be treated as one.' },
+      { n: '6.6', text: 'Where a month\'s takings are too small to be useful, the Office may resolve to carry them into the following month. Such a carry requires the assent of the Office and shall not become a habit.' },
+      { n: '6.7', text: 'The Keeper shall declare what was collected and what became of it. A Jar spent in secret is a Jar nobody will pay into twice.' },
+    ],
+  },
+  {
+    numeral: 'VII',
     title: 'Of Appeal and Amendment',
     Icon: GiFeather,
     gist: 'Wrongly logged? It gets removed. Rules change by agreement, not decree.',
     clauses: [
-      { n: '6.1', text: 'A Strike recorded in error shall be removed from the ledger upon request. There is no shame in this and no penalty for asking.' },
-      { n: '6.2', text: 'A Strike logged by a misclick may be undone immediately, and the Keeper is encouraged to do so before pretending it was deliberate.' },
-      { n: '6.3', text: 'This Constitution may be amended by agreement of the Office. It may not be amended by the Keeper alone, nor quietly, nor retroactively.' },
-      { n: '6.4', text: 'Where a rule proves unworkable, the Office shall change the rule rather than ignore it. An ignored rule is worse than no rule.' },
-      { n: '6.5', text: 'Should this Constitution ever stop being funny, it shall be repealed in its entirety, and the Jar emptied on something nice.' },
+      { n: '7.1', text: 'A Strike recorded in error shall be removed from the ledger upon request. There is no shame in this and no penalty for asking.' },
+      { n: '7.2', text: 'A Strike logged by a misclick may be undone immediately, and the Keeper is encouraged to do so before pretending it was deliberate.' },
+      { n: '7.3', text: 'This Constitution may be amended by agreement of the Office. It may not be amended by the Keeper alone, nor quietly, nor retroactively.' },
+      { n: '7.4', text: 'Where a rule proves unworkable, the Office shall change the rule rather than ignore it. An ignored rule is worse than no rule.' },
+      { n: '7.5', text: 'Should this Constitution ever stop being funny, it shall be repealed in its entirety, and the Jar emptied on something nice.' },
     ],
   },
 ];
+
+/**
+ * Cross-references live here rather than being typed into the page, so
+ * renumbering an Article can't quietly leave the prose pointing at a clause
+ * that no longer says what it used to.
+ */
+export const AMENDMENT_CLAUSE = '7.3';

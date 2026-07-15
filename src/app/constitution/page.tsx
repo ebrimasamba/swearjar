@@ -5,10 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
-import { GiWaxSeal, GiThreeFriends, GiThunderStruck, GiBanknote } from 'react-icons/gi';
+import { GiWaxSeal, GiThreeFriends, GiThunderStruck, GiBanknote, GiHotMeal } from 'react-icons/gi';
 import { db } from '@/lib/db';
 import { formatCurrency } from '@/lib/utils';
-import { ARTICLES, ADOPTED } from '@/lib/constitution';
+import { ARTICLES, ADOPTED, AMENDMENT_CLAUSE } from '@/lib/constitution';
 
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
 const rise = {
@@ -56,12 +56,16 @@ export default function Constitution() {
             If you swore out loud, and two people heard it, that&apos;s{' '}
             <span className="text-gold">{price === null ? 'a strike' : formatCurrency(price)}</span> in the jar.
           </p>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            At the end of every month the jar gets spent on us — dinner, food, a match, a trip, or charity.
+          </p>
 
-          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { Icon: GiThunderStruck, label: 'Any swear, any volume', sub: 'Muttering counts. Calls count.' },
               { Icon: GiThreeFriends, label: 'Accuser + one witness', sub: 'Or own up to it yourself.' },
               { Icon: GiBanknote, label: 'Flat rate', sub: 'Every word costs the same.' },
+              { Icon: GiHotMeal, label: 'Emptied monthly', sub: 'Spent on the whole office.' },
             ].map((r) => (
               <div key={r.label} className="rounded-2xl border border-border bg-background/30 p-3">
                 <r.Icon className="h-4 w-4 text-hot" />
@@ -136,7 +140,7 @@ export default function Constitution() {
 
       <motion.p variants={rise} className="pb-2 text-center text-[11px] text-muted-foreground">
         Amendments require the agreement of the Office — see{' '}
-        <span className="font-mono text-hot/80">§6.3</span>.
+        <span className="font-mono text-hot/80">§{AMENDMENT_CLAUSE}</span>.
       </motion.p>
     </motion.div>
   );
