@@ -83,6 +83,24 @@ export default function SettingsPage() {
     }
   };
 
+  const handleClearAllData = async () => {
+    const dbName = isCloud ? 'Supabase cloud' : 'browser Local Storage';
+    if (confirm(`Are you sure you want to delete all employees and swears from your ${dbName}? This will clear everything so you can start with a completely empty roster.`)) {
+      try {
+        await db.clearAllData();
+        toast.success('All database records cleared successfully!', {
+          description: 'Ready for new entries.',
+        });
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1500);
+      } catch (error) {
+        console.error('Failed to clear data:', error);
+        toast.error('Failed to clear database records.');
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-8 animate-pulse">
@@ -184,25 +202,24 @@ export default function SettingsPage() {
           </div>
 
           {/* Reset button based on DB type */}
-          {!isCloud ? (
-            <div className="space-y-3">
-              <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-500/25 bg-amber-500/5 text-amber-600 dark:text-amber-400">
-                <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-bold">Demo Database Reset Option</p>
-                  <p className="text-[11px] opacity-90 mt-0.5 leading-normal">
-                    This will delete all custom employees, swears, and settings currently stored in your browser's Local Storage, restoring the default Dunder Mifflin seed dataset.
-                  </p>
-                </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handleResetDemoData}
+                  className="border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400 gap-2 w-full sm:w-auto"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Reset Browser Demo Data
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleClearAllData}
+                  className="gap-2 w-full sm:w-auto"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Clear All Data (Start Fresh)
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                onClick={handleResetDemoData}
-                className="border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400 gap-2 w-full sm:w-auto"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Reset Browser Demo Data
-              </Button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -215,16 +232,27 @@ export default function SettingsPage() {
                   </p>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                onClick={handleSeedSupabase}
-                className="border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 gap-2 w-full sm:w-auto"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Seed Supabase Database
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handleSeedSupabase}
+                  className="border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 gap-2 w-full sm:w-auto"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Seed Supabase Database
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleClearAllData}
+                  className="gap-2 w-full sm:w-auto"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Clear Cloud Database (Start Fresh)
+                </Button>
+              </div>
             </div>
           )}
+
         </CardContent>
       </Card>
     </div>

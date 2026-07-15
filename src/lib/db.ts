@@ -224,23 +224,21 @@ export const db = {
         .select('*')
         .order('name', { ascending: true });
       if (error) throw error;
-      
-      // Seed if empty in Supabase as well
-      if (!data || data.length === 0) {
-        const seeded = await this.seedSupabase();
-        return seeded.employees;
-      }
-      return data;
+      return data || [];
     } else {
+      const isInitialized = typeof window !== 'undefined' && localStorage.getItem('swearjar_initialized') === 'true';
       let employees = getLocalData<Employee[]>('swearjar_employees', []);
-      if (employees.length === 0) {
+      
+      if (!isInitialized && employees.length === 0) {
         employees = SEED_EMPLOYEES;
         setLocalData('swearjar_employees', employees);
         
-        // Also seed swears and settings if employees was empty
         const swears = getLocalData<Swear[]>('swearjar_swears', []);
         if (swears.length === 0) {
           setLocalData('swearjar_swears', generateSeedSwears(employees));
+        }
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('swearjar_initialized', 'true');
         }
       }
       return employees.sort((a, b) => a.name.localeCompare(b.name));
@@ -317,8 +315,9 @@ export const db = {
       if (error) throw error;
       return data || [];
     } else {
+      const isInitialized = typeof window !== 'undefined' && localStorage.getItem('swearjar_initialized') === 'true';
       const swears = getLocalData<Swear[]>('swearjar_swears', []);
-      if (swears.length === 0) {
+      if (!isInitialized && swears.length === 0) {
         const employees = getLocalData<Employee[]>('swearjar_employees', SEED_EMPLOYEES);
         const seedSwears = generateSeedSwears(employees);
         setLocalData('swearjar_swears', seedSwears);
@@ -472,6 +471,30 @@ export const db = {
     localStorage.removeItem('swearjar_employees');
     localStorage.removeItem('swearjar_swears');
     localStorage.removeItem('swearjar_price_per_swear');
+    localStorage.removeItem('swearjar_initialized');
     // Reloading will trigger re-seeding
+  },
+
+  // Clear all data to start completely fresh
+  async clearAllData(): Promise<void> {
+    if (supabase) {
+      const { error: errorSwears } = await supabase
+        .from('swears')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      const { error: errorEmployees } = await supabase
+        .from('employees')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (errorSwears) throw errorSwears;
+      if (errorEmployees) throw errorEmployees;
+    } else {
+      if (typeof window === 'undefined') return;
+      setLocalData('swearjar_employees', []);
+      setLocalData('swearjar_swears', []);
+      localStorage.setItem('swearjar_initialized', 'true');
+    }
   }
 };
